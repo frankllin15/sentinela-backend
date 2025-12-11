@@ -114,11 +114,24 @@ Configuration is environment-driven via `.env` file:
 
 ### Initialization & Seeding
 
-The application must implement bootstrap logic (OnModuleInit or similar) to:
-1. Ensure all 5 police forces exist in the database
-2. Check for existence of `admin_geral` user
-3. If no admin exists, create one with auto-generated 6-digit password
-4. Log temporary admin credentials to stdout (only on creation)
+**Implemented**: Automatic seeding via `DatabaseModule` and `SeedService`
+
+The application automatically seeds data on startup via `OnModuleInit`:
+
+1. **Forces Seeding** (`seedForces()`):
+   - Creates 5 police forces if they don't exist
+   - Forces: Polícia Federal, Polícia Rodoviária Federal, Polícia Militar, Polícia Civil, Polícia Penal
+
+2. **Admin User Seeding** (`seedAdminUser()`):
+   - Checks for existing `admin_geral` user
+   - If none exists:
+     - Creates admin with email: `admin@sentinela.gov.br`
+     - Generates random 6-digit numeric password
+     - Hashes password with bcrypt (10 rounds)
+     - Logs credentials to stdout (ONLY on creation)
+     - Sets `mustChangePassword = true`
+
+See `SEEDS.md` for detailed documentation.
 
 ## Development Notes
 

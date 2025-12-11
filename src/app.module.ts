@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { dataSourceOptions } from './config/typeorm.config';
+import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ForcesModule } from './forces/forces.module';
@@ -20,6 +21,7 @@ import { AuditModule } from './audit/audit.module';
       autoLoadEntities: true,
       entities: undefined,
     }),
+    DatabaseModule,
     AuthModule,
     UsersModule,
     ForcesModule,
