@@ -10,19 +10,19 @@ export class AuditLog {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 255 })
+  @Column({ type: 'varchar', length: 255 })
   action: string;
 
-  @Column({ name: 'user_id', nullable: true })
+  @Column({ name: 'user_id', type: 'integer', nullable: true })
   userId: number | null;
 
-  @Column({ name: 'target_entity', length: 255 })
+  @Column({ name: 'target_entity', type: 'varchar', length: 255 })
   targetEntity: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  details: Record<string, any> | null;
+  details: Record<string, any>;
 
-  @Column({ name: 'ip_address', length: 45, nullable: true })
+  @Column({ name: 'ip_address', type: 'varchar', length: 45, nullable: true })
   ipAddress: string | null;
 
   @CreateDateColumn({ name: 'timestamp' })

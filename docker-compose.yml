@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: sentinela-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: sentinela
+      POSTGRES_DB: sentinela_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sentinela-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U root -d sentinela_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Uncomment to run the application in Docker
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: sentinela-backend
+  #   restart: unless-stopped
+  #   ports:
+  #     - '3000:3000'
+  #   environment:
+  #     NODE_ENV: development
+  #     DB_HOST: postgres
+  #     DB_PORT: 5432
+  #     DB_USERNAME: root
+  #     DB_PASSWORD: sentinela
+  #     DB_DATABASE: sentinela_db
+  #     DB_SYNCHRONIZE: 'false'
+  #     DB_LOGGING: 'true'
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - sentinela-network
+  #   volumes:
+  #     - .:/app
+  #     - /app/node_modules
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  sentinela-network:
+    driver: bridge

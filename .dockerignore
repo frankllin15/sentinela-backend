@@ -1,0 +1,50 @@
+# Dependencies
+node_modules
+npm-debug.log
+pnpm-debug.log
+yarn-error.log
+
+# Build output
+dist
+build
+.cache
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*.sublime-workspace
+
+# Git
+.git
+.gitignore
+
+# Tests
+coverage
+.nyc_output
+
+# Logs
+logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp files
+.temp
+.tmp
+*.pid
+*.seed
+*.pid.lock
+
+# Documentation
+README.md
+CLAUDE.md
+.github
