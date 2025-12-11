@@ -1,26 +1,90 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { User } from '../users/entities/user.entity';
+import { AuthResponseDto } from './dto/auth-response.dto';
+import { JwtPayload } from './strategies/jwt.strategy';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    private jwtService: JwtService,
+  ) {}
+
+  /**
+   * Valida credenciais do usuário
+   * @param email Email do usuário
+   * @param password Senha em texto plano
+   * @returns Usuário se válido, null caso contrário
+   */
+  async validateUser(email: string, password: string): Promise<User | null> {
+    const user = await this.userRepository.findOne({
+      where: { email },
+      relations: ['force'],
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    // Verificar se usuário está ativo
+    if (!user.isActive) {
+      throw new UnauthorizedException('Usuário desativado');
+    }
+
+    // Verificar senha
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return null;
+    }
+
+    return user;
   }
 
-  findAll() {
-    return `This action returns all auth`;
+  /**
+   * Realiza login e gera token JWT
+   * @param user Usuário autenticado
+   * @returns Token JWT e dados do usuário
+   */
+  async login(user: User): Promise<AuthResponseDto> {
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      forceId: user.forceId,
+    };
+
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        forceId: user.forceId,
+        mustChangePassword: user.mustChangePassword,
+      },
+    };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
+  /**
+   * Busca usuário por ID
+   * @param userId ID do usuário
+   * @returns Usuário encontrado
+   */
+  async findUserById(userId: number): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['force'],
+    });
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
+    if (!user) {
+      throw new UnauthorizedException('Usuário não encontrado');
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+    return user;
   }
 }
