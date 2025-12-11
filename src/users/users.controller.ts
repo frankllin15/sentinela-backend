@@ -6,11 +6,18 @@ import {
   Patch,
   Param,
   Delete,
+  NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { UserRole } from './entities/user.entity';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
 
+@UseGuards(RolesGuard)
+@Roles(UserRole.ADMIN_GERAL, UserRole.GESTOR)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -26,8 +33,13 @@ export class UsersController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    const user = await this.usersService.findOne(+id);
+
+    if (!user) {
+      throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
+    }
+    return user;
   }
 
   @Patch(':id')

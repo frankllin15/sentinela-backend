@@ -15,6 +15,13 @@ export enum UserRole {
   USUARIO = 'usuario',
 }
 
+export const UserRolesArray = [
+  UserRole.ADMIN_GERAL,
+  UserRole.PONTO_FOCAL,
+  UserRole.GESTOR,
+  UserRole.USUARIO,
+];
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
