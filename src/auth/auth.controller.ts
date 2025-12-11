@@ -28,9 +28,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Request() req: any) {
-    const user = await this.authService.findUserById(req.user.id);
-    // Não retornar senha
-    const { password, ...result } = user;
-    return result;
+    const user = await this.authService.getUserProfile(req.user.id);
+
+    return user;
   }
 }

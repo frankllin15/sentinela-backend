@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { User } from '../users/entities/user.entity';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { JwtPayload } from './strategies/jwt.strategy';
+import { UserProfileDto } from './dto/user-profile.dto';
 
 @Injectable()
 export class AuthService {
@@ -59,7 +60,7 @@ export class AuthService {
     };
 
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: await this.jwtService.signAsync(payload),
       user: {
         id: user.id,
         email: user.email,
@@ -86,5 +87,25 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async getUserProfile(userId: number): Promise<UserProfileDto | null> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['force'],
+      select: ['id', 'email', 'role', 'forceId', 'mustChangePassword'],
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      forceId: user.forceId,
+      mustChangePassword: user.mustChangePassword,
+    };
   }
 }
