@@ -3,11 +3,13 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { Media } from '../../media/entities/media.entity';
 
 @Entity('people')
 export class Person {
@@ -83,6 +85,13 @@ export class Person {
 
   @Column({ name: 'updated_by', type: 'integer', nullable: true })
   updatedBy: number | null;
+
+  // Relacionamento com Media (fotos)
+  @OneToMany(() => Media, (media) => media.person, {
+    cascade: true,
+    eager: false,
+  })
+  photos: Media[];
 
   // Timestamps
   @CreateDateColumn({ name: 'created_at' })

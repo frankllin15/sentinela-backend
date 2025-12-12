@@ -26,6 +26,12 @@ export class PeopleService {
     // Validar CPF duplicado
     await this.validateCpfUniqueness(createPersonDto.cpf);
 
+    // Validar Nome + Nome da Mãe duplicado
+    await this.validateNameMotherNameUniqueness(
+      createPersonDto.fullName,
+      createPersonDto.motherName,
+    );
+
     const person = this.personRepository.create({
       ...createPersonDto,
       createdBy: userId,
@@ -142,6 +148,23 @@ export class PeopleService {
       await this.validateCpfUniqueness(updatePersonDto.cpf, id);
     }
 
+    // Validar Nome + Nome da Mãe duplicado (excluindo o registro atual)
+    const fullNameChanged =
+      updatePersonDto.fullName && updatePersonDto.fullName !== person.fullName;
+    const motherNameChanged =
+      updatePersonDto.motherName !== undefined &&
+      updatePersonDto.motherName !== person.motherName;
+
+    if (fullNameChanged || motherNameChanged) {
+      await this.validateNameMotherNameUniqueness(
+        updatePersonDto.fullName || person.fullName,
+        updatePersonDto.motherName !== undefined
+          ? updatePersonDto.motherName
+          : person.motherName,
+        id,
+      );
+    }
+
     // Atualizar dados
     Object.assign(person, updatePersonDto);
     person.updatedBy = userId;
@@ -177,6 +200,38 @@ export class PeopleService {
 
     if (existing && existing.id !== excludeId) {
       throw new ConflictException('CPF já cadastrado no sistema');
+    }
+  }
+
+  private async validateNameMotherNameUniqueness(
+    fullName: string,
+    motherName: string | null | undefined,
+    excludeId?: number,
+  ): Promise<void> {
+    if (!fullName) return; // Nome completo é obrigatório, mas validar por segurança
+
+    // Se não houver nome da mãe, não fazemos essa validação
+    // pois nome sozinho não é suficiente para identificar duplicidade
+    if (!motherName) return;
+
+    // Buscar pessoa com mesma combinação de nome + nome da mãe (case-insensitive)
+    const queryBuilder = this.personRepository
+      .createQueryBuilder('person')
+      .where('LOWER(person.fullName) = LOWER(:fullName)', { fullName })
+      .andWhere('LOWER(person.motherName) = LOWER(:motherName)', {
+        motherName,
+      });
+
+    if (excludeId) {
+      queryBuilder.andWhere('person.id != :excludeId', { excludeId });
+    }
+
+    const existing = await queryBuilder.getOne();
+
+    if (existing) {
+      throw new ConflictException(
+        'Já existe uma pessoa cadastrada com este nome completo e nome da mãe',
+      );
     }
   }
 

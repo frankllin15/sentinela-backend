@@ -10,6 +10,7 @@ import { UsersModule } from './users/users.module';
 import { ForcesModule } from './forces/forces.module';
 import { AuditModule } from './audit/audit.module';
 import { PeopleModule } from './people/people.module';
+import { MediaModule } from './media/media.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { PeopleModule } from './people/people.module';
     ForcesModule,
     AuditModule,
     PeopleModule,
+    MediaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
