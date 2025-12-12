@@ -5,6 +5,11 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 
+export enum AuditStatus {
+  SUCCESS = 'success',
+  FAILURE = 'failure',
+}
+
 @Entity('audit_logs')
 export class AuditLog {
   @PrimaryGeneratedColumn()
@@ -24,6 +29,13 @@ export class AuditLog {
 
   @Column({ name: 'ip_address', type: 'varchar', length: 45, nullable: true })
   ipAddress: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: AuditStatus,
+    default: AuditStatus.SUCCESS,
+  })
+  status: AuditStatus;
 
   @CreateDateColumn({ name: 'timestamp' })
   timestamp: Date;
