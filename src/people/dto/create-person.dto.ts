@@ -46,7 +46,7 @@ export class CreatePersonDto {
   voterId?: string;
 
   // Localização
-  @IsNotEmpty({ message: 'Endereço principal é obrigatório' })
+  @IsOptional()
   @IsString({ message: 'Endereço principal deve ser um texto' })
   addressPrimary: string;
 

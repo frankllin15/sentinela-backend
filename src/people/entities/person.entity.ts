@@ -33,7 +33,7 @@ export class Person {
   voterId: string | null;
 
   // Localização
-  @Column({ name: 'address_primary', type: 'text' })
+  @Column({ name: 'address_primary', type: 'text', nullable: true })
   addressPrimary: string;
 
   @Column({ name: 'address_secondary', type: 'text', nullable: true })
