@@ -1,13 +1,10 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateForceDto } from './dto/create-force.dto';
 import { UpdateForceDto } from './dto/update-force.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Force } from './entities/force.entity';
+import { BusinessException } from '../common/exceptions/business.exception';
 
 @Injectable()
 export class ForcesService {
@@ -22,7 +19,7 @@ export class ForcesService {
     });
 
     if (existingForce) {
-      throw new ConflictException('Força policial com este nome já existe');
+      throw BusinessException.alreadyExists('Força policial', 'nome');
     }
 
     const force = this.forceRepository.create(createForceDto);
@@ -43,7 +40,7 @@ export class ForcesService {
     });
 
     if (!force) {
-      throw new NotFoundException(`Força policial com ID ${id} não encontrada`);
+      throw BusinessException.notFound('Força policial', id);
     }
 
     return force;
@@ -56,7 +53,7 @@ export class ForcesService {
       });
 
       if (existingForce && existingForce.id !== id) {
-        throw new ConflictException('Força policial com este nome já existe');
+        throw BusinessException.alreadyExists('Força policial', 'nome');
       }
     }
 
@@ -66,7 +63,7 @@ export class ForcesService {
     });
 
     if (!force) {
-      throw new NotFoundException(`Força policial com ID ${id} não encontrada`);
+      throw BusinessException.notFound('Força policial', id);
     }
 
     return this.forceRepository.save(force);
@@ -79,11 +76,11 @@ export class ForcesService {
     });
 
     if (!force) {
-      throw new NotFoundException(`Força policial com ID ${id} não encontrada`);
+      throw BusinessException.notFound('Força policial', id);
     }
 
     if (force.users && force.users.length > 0) {
-      throw new ConflictException(
+      throw BusinessException.invalidOperation(
         'Não é possível remover uma força policial que possui usuários associados',
       );
     }

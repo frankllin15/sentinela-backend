@@ -47,6 +47,13 @@ export class MediaController {
     return this.mediaService.findOne(id, user);
   }
 
+  @Get('person/:personId')
+  findByPerson(
+    @Param('personId', ParseIntPipe) personId: number,
+    @CurrentUser() user: User,
+  ) {
+    return this.mediaService.findByPerson(personId, user);
+  }
   @Patch(':id')
   @Audit('media.update', 'Media')
   update(

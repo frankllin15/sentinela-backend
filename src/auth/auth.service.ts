@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -9,6 +9,7 @@ import { JwtPayload } from './strategies/jwt.strategy';
 import { UserProfileDto } from './dto/user-profile.dto';
 import { AuditService } from '../audit/audit.service';
 import { AuditStatus } from '../audit/entities/audit.entity';
+import { BusinessException } from '../common/exceptions/business.exception';
 
 @Injectable()
 export class AuthService {
@@ -60,7 +61,7 @@ export class AuthService {
         status: AuditStatus.FAILURE,
         details: { email, reason: 'Usuário desativado' },
       });
-      throw new UnauthorizedException('Usuário desativado');
+      throw BusinessException.unauthorized('Usuário desativado');
     }
 
     // Verificar senha
@@ -129,7 +130,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Usuário não encontrado');
+      throw BusinessException.unauthorized('Usuário não encontrado');
     }
 
     return user;

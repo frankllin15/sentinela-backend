@@ -1,15 +1,11 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
+import { BusinessException } from '../common/exceptions/business.exception';
 
 @Injectable()
 export class UsersService {
@@ -24,12 +20,12 @@ export class UsersService {
     });
 
     if (existingUser) {
-      throw new ConflictException('Usuário com este email já existe');
+      throw BusinessException.alreadyExists('Usuário', 'email');
     }
 
     // Validar que usuários não admin_geral devem ter forceId
     if (createUserDto.role !== UserRole.ADMIN_GERAL && !createUserDto.forceId) {
-      throw new BadRequestException(
+      throw BusinessException.invalidOperation(
         'Usuários que não são admin_geral devem estar associados a uma força policial',
       );
     }
@@ -78,7 +74,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
+      throw BusinessException.notFound('Usuário', id);
     }
 
     return user;
@@ -90,7 +86,7 @@ export class UsersService {
     });
 
     if (!existingUser) {
-      throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
+      throw BusinessException.notFound('Usuário', id);
     }
 
     // Verificar email duplicado
@@ -100,7 +96,7 @@ export class UsersService {
       });
 
       if (emailExists) {
-        throw new ConflictException('Este email já está em uso');
+        throw BusinessException.alreadyExists('Usuário', 'email');
       }
     }
 
@@ -114,7 +110,7 @@ export class UsersService {
     const newForceId = updateUserDto.forceId ?? existingUser.forceId;
 
     if (newRole !== UserRole.ADMIN_GERAL && !newForceId) {
-      throw new BadRequestException(
+      throw BusinessException.invalidOperation(
         'Usuários que não são admin_geral devem estar associados a uma força policial',
       );
     }
@@ -125,7 +121,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
+      throw BusinessException.notFound('Usuário', id);
     }
 
     return this.userRepository.save(user);
@@ -137,7 +133,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
+      throw BusinessException.notFound('Usuário', id);
     }
 
     // Soft delete: apenas marca como inativo

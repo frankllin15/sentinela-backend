@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Media } from '../../media/entities/media.entity';
+import { ColumnNumericTransformer } from '../../common/transformers/column-numeric.transformer';
 
 @Entity('people')
 export class Person {
@@ -39,10 +40,22 @@ export class Person {
   @Column({ name: 'address_secondary', type: 'text', nullable: true })
   addressSecondary: string | null;
 
-  @Column({ type: 'decimal', precision: 10, scale: 8 })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 8,
+    transformer: new ColumnNumericTransformer(),
+    nullable: true,
+  })
   latitude: number;
 
-  @Column({ type: 'decimal', precision: 11, scale: 8 })
+  @Column({
+    type: 'decimal',
+    precision: 11,
+    scale: 8,
+    transformer: new ColumnNumericTransformer(),
+    nullable: true,
+  })
   longitude: number;
 
   // Filiação

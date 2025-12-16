@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateMediaDto } from './dto/create-media.dto';
@@ -12,6 +8,7 @@ import { Media } from './entities/media.entity';
 import { PeopleService } from '../people/people.service';
 import { User, UserRole } from '../users/entities/user.entity';
 import { Person } from '../people/entities/person.entity';
+import { BusinessException } from '../common/exceptions/business.exception';
 
 @Injectable()
 export class MediaService {
@@ -75,15 +72,18 @@ export class MediaService {
     });
 
     if (!media) {
-      throw new NotFoundException(`Mídia com ID ${id} não encontrada`);
+      throw BusinessException.notFound('Mídia', id);
     }
 
     // Verificar se user tem acesso à Person associada (confidencialidade)
     try {
       await this.peopleService.findOne(media.personId, user);
     } catch (error) {
-      if (error instanceof ForbiddenException) {
-        throw new ForbiddenException(
+      if (
+        error instanceof BusinessException &&
+        error.statusCode.valueOf() === 403
+      ) {
+        throw BusinessException.forbidden(
           'Você não tem permissão para acessar esta mídia',
         );
       }
@@ -136,8 +136,11 @@ export class MediaService {
     try {
       return await this.peopleService.findOne(personId, user);
     } catch (error) {
-      if (error instanceof ForbiddenException) {
-        throw new ForbiddenException(
+      if (
+        error instanceof BusinessException &&
+        error.statusCode.valueOf() === 403
+      ) {
+        throw BusinessException.forbidden(
           'Você não tem permissão para acessar registros desta pessoa',
         );
       }

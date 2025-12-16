@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateAuditDto } from './dto/create-audit.dto';
 import { QueryAuditDto } from './dto/query-audit.dto';
 import { AuditLog, AuditStatus } from './entities/audit.entity';
+import { BusinessException } from '../common/exceptions/business.exception';
 
 @Injectable()
 export class AuditService {
@@ -90,9 +91,7 @@ export class AuditService {
     const auditLog = await this.auditRepository.findOne({ where: { id } });
 
     if (!auditLog) {
-      throw new NotFoundException(
-        `Log de auditoria com ID ${id} não encontrado`,
-      );
+      throw BusinessException.notFound('Log de auditoria', id);
     }
 
     return auditLog;

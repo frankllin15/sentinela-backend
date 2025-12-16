@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreatePersonDto } from './dto/create-person.dto';
@@ -11,6 +6,7 @@ import { UpdatePersonDto } from './dto/update-person.dto';
 import { QueryPersonDto } from './dto/query-person.dto';
 import { Person } from './entities/person.entity';
 import { User, UserRole } from '../users/entities/user.entity';
+import { BusinessException } from '../common/exceptions/business.exception';
 
 @Injectable()
 export class PeopleService {
@@ -123,7 +119,7 @@ export class PeopleService {
     });
 
     if (!person) {
-      throw new NotFoundException(`Pessoa com ID ${id} não encontrada`);
+      throw BusinessException.notFound('Pessoa', id);
     }
 
     // Verificar acesso a registro confidencial
@@ -140,7 +136,7 @@ export class PeopleService {
     const person = await this.personRepository.findOne({ where: { id } });
 
     if (!person) {
-      throw new NotFoundException(`Pessoa com ID ${id} não encontrada`);
+      throw BusinessException.notFound('Pessoa', id);
     }
 
     // Validar CPF duplicado (excluindo o registro atual)
@@ -176,7 +172,7 @@ export class PeopleService {
     const person = await this.personRepository.findOne({ where: { id } });
 
     if (!person) {
-      throw new NotFoundException(`Pessoa com ID ${id} não encontrada`);
+      throw BusinessException.notFound('Pessoa', id);
     }
 
     await this.personRepository.remove(person);
@@ -199,7 +195,11 @@ export class PeopleService {
     const existing = await this.personRepository.findOne({ where: { cpf } });
 
     if (existing && existing.id !== excludeId) {
-      throw new ConflictException('CPF já cadastrado no sistema');
+      throw new BusinessException(
+        'CPF já cadastrado no sistema',
+        'CPF_ALREADY_EXISTS',
+        409,
+      );
     }
   }
 
@@ -229,8 +229,10 @@ export class PeopleService {
     const existing = await queryBuilder.getOne();
 
     if (existing) {
-      throw new ConflictException(
+      throw new BusinessException(
         'Já existe uma pessoa cadastrada com este nome completo e nome da mãe',
+        'NAME_MOTHER_NAME_ALREADY_EXISTS',
+        409,
       );
     }
   }
@@ -260,7 +262,7 @@ export class PeopleService {
     ];
 
     if (!allowedRoles.includes(user.role)) {
-      throw new ForbiddenException(
+      throw BusinessException.forbidden(
         'Você não tem permissão para acessar este registro confidencial',
       );
     }
