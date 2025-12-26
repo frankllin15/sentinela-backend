@@ -1,8 +1,9 @@
-import { IsOptional, IsEnum, IsNumber, Min } from 'class-validator';
+import { IsOptional, IsEnum, IsInt } from 'class-validator';
 import { Type } from 'class-transformer';
 import { MediaType } from '../entities/media.entity';
+import { BasePaginationQueryDto } from '../../common/dto';
 
-export class QueryMediaDto {
+export class QueryMediaDto extends BasePaginationQueryDto {
   @IsOptional()
   @IsEnum(MediaType, {
     message: 'Tipo de mídia inválido. Use: FACE, FULL_BODY ou TATTOO',
@@ -11,18 +12,9 @@ export class QueryMediaDto {
 
   @IsOptional()
   @Type(() => Number)
-  @IsNumber({}, { message: 'O ID da pessoa deve ser um número' })
+  @IsInt({ message: 'O ID da pessoa deve ser um número inteiro' })
   personId?: number;
 
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber({}, { message: 'A página deve ser um número' })
-  @Min(1, { message: 'A página deve ser no mínimo 1' })
-  page?: number = 1;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber({}, { message: 'O limite deve ser um número' })
-  @Min(1, { message: 'O limite deve ser no mínimo 1' })
+  // Sobrescrever limite padrão para 10 (manter compatibilidade)
   limit?: number = 10;
 }

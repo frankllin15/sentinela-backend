@@ -26,8 +26,6 @@ import { envSchema } from './config/env.schema';
     }),
     TypeOrmModule.forRoot({
       ...dataSourceOptions,
-      autoLoadEntities: true,
-      entities: undefined,
     }),
     CommonModule,
     DatabaseModule,

@@ -1,17 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { QueryUserDto } from './dto/query-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import { BusinessException } from '../common/exceptions/business.exception';
+import { PaginatedResponse } from '../common/dto';
+import { PaginationService } from '../common/services/pagination.service';
+import { ReadUserDto } from './dto/read-user.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private paginationService: PaginationService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -42,20 +47,56 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find({
-      where: { isActive: true },
+  async findAll(
+    queryUserDto: QueryUserDto,
+  ): Promise<PaginatedResponse<ReadUserDto>> {
+    const { page = 1, limit = 20, isActive, forceId } = queryUserDto;
+
+    // Construir filtros dinâmicos
+    const where: any = {};
+
+    // Filtrar por isActive (se fornecido)
+    if (isActive !== undefined) {
+      where.isActive = isActive;
+    }
+
+    // Filtrar por forceId (se fornecido)
+    if (forceId !== undefined) {
+      where.forceId = forceId;
+    }
+
+    // Calcular skip para paginação
+    const skip = (page - 1) * limit;
+
+    // Buscar dados e contagem total
+    const [data, total] = await this.userRepository.findAndCount({
+      where,
       relations: ['force'],
-      select: [
-        'id',
-        'email',
-        'role',
-        'forceId',
-        'isActive',
-        'mustChangePassword',
-        'createdAt',
-      ],
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        forceId: true,
+        isActive: true,
+        mustChangePassword: true,
+        createdAt: true,
+        force: {
+          name: true,
+        },
+      },
+      skip,
+      take: limit,
+      order: {
+        createdAt: 'DESC',
+      },
     });
+
+    const userData: ReadUserDto[] = data.map(({ force, ...user }) => ({
+      ...user,
+      forceName: force?.name,
+    }));
+
+    return this.paginationService.paginate(userData, total, page, limit);
   }
 
   async findOne(id: number): Promise<User> {
@@ -82,7 +123,7 @@ export class UsersService {
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const existingUser = await this.userRepository.findOne({
-      where: { id, isActive: true },
+      where: { id },
     });
 
     if (!existingUser) {
@@ -129,16 +170,14 @@ export class UsersService {
 
   async remove(id: number): Promise<void> {
     const user = await this.userRepository.findOne({
-      where: { id, isActive: true },
+      where: { id },
     });
 
     if (!user) {
       throw BusinessException.notFound('Usuário', id);
     }
 
-    // Soft delete: apenas marca como inativo
-    user.isActive = false;
-    await this.userRepository.save(user);
+    await this.userRepository.remove(user);
   }
 
   async findOneByEmail(email: string): Promise<User | null> {

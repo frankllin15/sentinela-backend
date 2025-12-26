@@ -1,14 +1,9 @@
-import {
-  IsBoolean,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsBoolean, IsInt, IsOptional, IsString } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
+import { stringToBooleanTransformer } from '../../common/transformers';
+import { BasePaginationQueryDto } from '../../common/dto';
 
-export class QueryPersonDto {
+export class QueryPersonDto extends BasePaginationQueryDto {
   @IsOptional()
   @IsString({ message: 'Nome completo deve ser um texto' })
   fullName?: string;
@@ -30,7 +25,7 @@ export class QueryPersonDto {
   fatherName?: string;
 
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(stringToBooleanTransformer)
   @IsBoolean({ message: 'isConfidential deve ser um booleano' })
   isConfidential?: boolean;
 
@@ -38,18 +33,4 @@ export class QueryPersonDto {
   @Type(() => Number)
   @IsInt({ message: 'ID do criador deve ser um número inteiro' })
   createdBy?: number;
-
-  // Paginação
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt({ message: 'Página deve ser um número inteiro' })
-  @Min(1, { message: 'Página deve ser no mínimo 1' })
-  page?: number = 1;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt({ message: 'Limite deve ser um número inteiro' })
-  @Min(1, { message: 'Limite deve ser no mínimo 1' })
-  @Max(100, { message: 'Limite deve ser no máximo 100' })
-  limit?: number = 20;
 }

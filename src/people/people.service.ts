@@ -7,12 +7,16 @@ import { QueryPersonDto } from './dto/query-person.dto';
 import { Person } from './entities/person.entity';
 import { User, UserRole } from '../users/entities/user.entity';
 import { BusinessException } from '../common/exceptions/business.exception';
+import { ReadPersonDto } from './dto/read-person.dto';
+import { PaginatedResponse } from '../common/dto';
+import { PaginationService } from '../common/services/pagination.service';
 
 @Injectable()
 export class PeopleService {
   constructor(
     @InjectRepository(Person)
     private personRepository: Repository<Person>,
+    private paginationService: PaginationService,
   ) {}
 
   async create(
@@ -40,12 +44,7 @@ export class PeopleService {
   async findAll(
     queryDto: QueryPersonDto,
     user: User,
-  ): Promise<{
-    data: Person[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
+  ): Promise<PaginatedResponse<ReadPersonDto>> {
     const page = queryDto.page || 1;
     const limit = queryDto.limit || 20;
     const skip = (page - 1) * limit;
@@ -69,7 +68,9 @@ export class PeopleService {
     }
 
     if (queryDto.cpf) {
-      queryBuilder.andWhere('person.cpf = :cpf', { cpf: queryDto.cpf });
+      const cleanCpf = queryDto.cpf.replace(/\D/g, ''); // Remover formatação
+
+      queryBuilder.andWhere('person.cpf LIKE :cpf', { cpf: `%${cleanCpf}%` });
     }
 
     if (queryDto.motherName) {
@@ -102,14 +103,26 @@ export class PeopleService {
     // Paginação
     queryBuilder.skip(skip).take(limit);
 
-    const [data, total] = await queryBuilder.getManyAndCount();
+    queryBuilder
+      .leftJoin('person.photos', 'photos', 'photos.type = :mediaType', {
+        mediaType: 'FACE',
+      })
+      .addSelect(['photos.url']) // Seleciona apenas a URL
+      .skip(skip)
+      .take(limit);
 
-    return {
-      data,
-      total,
-      page,
-      limit,
-    };
+    const [people, total] = await queryBuilder.getManyAndCount();
+
+    const data: ReadPersonDto[] = people.map(({ photos, ...person }) => {
+      const readDto = new ReadPersonDto();
+      Object.assign(readDto, person);
+      if (photos && photos.length > 0) {
+        readDto.facePhotoUrl = photos[0].url;
+      }
+      return readDto;
+    });
+
+    return this.paginationService.paginate(data, total, page, limit);
   }
 
   async findOne(id: number, user: User): Promise<Person> {

@@ -9,6 +9,8 @@ import { PeopleService } from '../people/people.service';
 import { User, UserRole } from '../users/entities/user.entity';
 import { Person } from '../people/entities/person.entity';
 import { BusinessException } from '../common/exceptions/business.exception';
+import { PaginatedResponse } from '../common/dto';
+import { PaginationService } from '../common/services/pagination.service';
 
 @Injectable()
 export class MediaService {
@@ -16,6 +18,7 @@ export class MediaService {
     @InjectRepository(Media)
     private readonly mediaRepository: Repository<Media>,
     private readonly peopleService: PeopleService,
+    private readonly paginationService: PaginationService,
   ) {}
 
   async create(createMediaDto: CreateMediaDto, user: User): Promise<Media> {
@@ -26,7 +29,10 @@ export class MediaService {
     return this.mediaRepository.save(media);
   }
 
-  async findAll(query: QueryMediaDto, user: User): Promise<Media[]> {
+  async findAll(
+    query: QueryMediaDto,
+    user: User,
+  ): Promise<PaginatedResponse<Media>> {
     const { type, personId, page = 1, limit = 10 } = query;
 
     const queryBuilder = this.mediaRepository
@@ -62,7 +68,9 @@ export class MediaService {
     // Ordenar por data de criação (mais recente primeiro)
     queryBuilder.orderBy('media.createdAt', 'DESC');
 
-    return queryBuilder.getMany();
+    const [data, total] = await queryBuilder.getManyAndCount();
+
+    return this.paginationService.paginate(data, total, page, limit);
   }
 
   async findOne(id: number, user: User): Promise<Media> {

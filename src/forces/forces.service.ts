@@ -28,7 +28,6 @@ export class ForcesService {
 
   async findAll(): Promise<Force[]> {
     return this.forceRepository.find({
-      relations: ['users'],
       order: { name: 'ASC' },
     });
   }

@@ -4,13 +4,12 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  Max,
-  Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AuditStatus } from '../entities/audit.entity';
+import { BasePaginationQueryDto } from '../../common/dto';
 
-export class QueryAuditDto {
+export class QueryAuditDto extends BasePaginationQueryDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'ID do usuário deve ser um número inteiro' })
@@ -35,17 +34,4 @@ export class QueryAuditDto {
   @IsOptional()
   @IsDateString({}, { message: 'Data final deve estar no formato ISO 8601' })
   endDate?: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt({ message: 'Página deve ser um número inteiro' })
-  @Min(1, { message: 'Página deve ser no mínimo 1' })
-  page?: number = 1;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt({ message: 'Limite deve ser um número inteiro' })
-  @Min(1, { message: 'Limite deve ser no mínimo 1' })
-  @Max(100, { message: 'Limite deve ser no máximo 100' })
-  limit?: number = 20;
 }

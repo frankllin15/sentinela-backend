@@ -5,12 +5,15 @@ import { CreateAuditDto } from './dto/create-audit.dto';
 import { QueryAuditDto } from './dto/query-audit.dto';
 import { AuditLog, AuditStatus } from './entities/audit.entity';
 import { BusinessException } from '../common/exceptions/business.exception';
+import { PaginatedResponse } from '../common/dto';
+import { PaginationService } from '../common/services/pagination.service';
 
 @Injectable()
 export class AuditService {
   constructor(
     @InjectRepository(AuditLog)
     private auditRepository: Repository<AuditLog>,
+    private paginationService: PaginationService,
   ) {}
 
   async log(createAuditDto: CreateAuditDto): Promise<AuditLog> {
@@ -22,12 +25,9 @@ export class AuditService {
     return this.auditRepository.save(auditLog);
   }
 
-  async findAll(queryDto: QueryAuditDto): Promise<{
-    data: AuditLog[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
+  async findAll(
+    queryDto: QueryAuditDto,
+  ): Promise<PaginatedResponse<AuditLog>> {
     const page = queryDto.page || 1;
     const limit = queryDto.limit || 20;
     const skip = (page - 1) * limit;
@@ -79,12 +79,7 @@ export class AuditService {
 
     const [data, total] = await queryBuilder.getManyAndCount();
 
-    return {
-      data,
-      total,
-      page,
-      limit,
-    };
+    return this.paginationService.paginate(data, total, page, limit);
   }
 
   async findOne(id: number): Promise<AuditLog> {
@@ -100,24 +95,14 @@ export class AuditService {
   async findByUser(
     userId: number,
     queryDto: QueryAuditDto,
-  ): Promise<{
-    data: AuditLog[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
+  ): Promise<PaginatedResponse<AuditLog>> {
     return this.findAll({ ...queryDto, userId });
   }
 
   async findByEntity(
     entity: string,
     queryDto: QueryAuditDto,
-  ): Promise<{
-    data: AuditLog[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
+  ): Promise<PaginatedResponse<AuditLog>> {
     return this.findAll({ ...queryDto, targetEntity: entity });
   }
 }

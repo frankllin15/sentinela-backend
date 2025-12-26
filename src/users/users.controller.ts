@@ -8,10 +8,12 @@ import {
   Delete,
   NotFoundException,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { QueryUserDto } from './dto/query-user.dto';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from './entities/user.entity';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
@@ -30,8 +32,8 @@ export class UsersController {
   }
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query() queryUserDto: QueryUserDto) {
+    return this.usersService.findAll(queryUserDto);
   }
 
   @Get(':id')
