@@ -15,6 +15,10 @@ export class CreateUserDto {
   @IsNotEmpty({ message: 'Email é obrigatório' })
   email: string;
 
+  @IsNotEmpty({ message: 'Nome é obrigatório' })
+  @MaxLength(100, { message: 'Nome deve ter no máximo 100 caracteres' })
+  name: string;
+
   @IsNotEmpty({ message: 'Senha é obrigatória' })
   @MinLength(6, { message: 'Senha deve ter no mínimo 6 caracteres' })
   @MaxLength(100, { message: 'Senha deve ter no máximo 100 caracteres' })

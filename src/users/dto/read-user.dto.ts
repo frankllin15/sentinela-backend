@@ -1,5 +1,6 @@
 export interface ReadUserDto {
   id: number;
+  name: string;
   email: string;
   role: string;
   isActive: boolean;

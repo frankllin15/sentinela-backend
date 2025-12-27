@@ -26,8 +26,13 @@ export class QueryPersonDto extends BasePaginationQueryDto {
 
   @IsOptional()
   @Transform(stringToBooleanTransformer)
-  @IsBoolean({ message: 'isConfidential deve ser um booleano' })
+  @IsBoolean({ message: 'Confidencial deve ser um booleano' })
   isConfidential?: boolean;
+
+  @IsOptional()
+  @Transform(stringToBooleanTransformer)
+  @IsBoolean({ message: 'Meus registros deve ser um booleano' })
+  isMyRecords?: boolean;
 
   @IsOptional()
   @Type(() => Number)

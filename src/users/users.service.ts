@@ -75,6 +75,7 @@ export class UsersService {
       select: {
         id: true,
         email: true,
+        name: true,
         role: true,
         forceId: true,
         isActive: true,
@@ -101,11 +102,12 @@ export class UsersService {
 
   async findOne(id: number): Promise<User> {
     const user = await this.userRepository.findOne({
-      where: { id, isActive: true },
+      where: { id },
       relations: ['force'],
       select: [
         'id',
         'email',
+        'name',
         'role',
         'forceId',
         'isActive',

@@ -91,6 +91,10 @@ export class PeopleService {
       });
     }
 
+    if (queryDto.isMyRecords) {
+      queryBuilder.andWhere('person.createdBy = :userId', { userId: user.id });
+    }
+
     if (queryDto.createdBy) {
       queryBuilder.andWhere('person.createdBy = :createdBy', {
         createdBy: queryDto.createdBy,
