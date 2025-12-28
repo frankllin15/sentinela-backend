@@ -7,7 +7,11 @@ async function bootstrap() {
 
   // Configuração de CORS
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: [
+      'https://m7jw9pds-5173.brs.devtunnels.ms',
+      'http://localhost:5173',
+      'https://widely-enjoyed-gazelle.ngrok-free.app',
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

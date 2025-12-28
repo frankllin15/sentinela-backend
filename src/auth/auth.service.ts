@@ -111,6 +111,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+        name: user.name,
         role: user.role,
         forceId: user.forceId,
         mustChangePassword: user.mustChangePassword,
@@ -140,7 +141,7 @@ export class AuthService {
     const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ['force'],
-      select: ['id', 'email', 'role', 'forceId', 'mustChangePassword'],
+      select: ['id', 'email', 'name', 'role', 'forceId', 'mustChangePassword'],
     });
 
     if (!user) {
