@@ -74,8 +74,9 @@ function parseArgs(): AdminConfig {
         config.password = nextArg;
         i++;
         break;
-      case '--role':
+      case '--role': {
         const role = nextArg as UserRole;
+
         if (!Object.values(UserRole).includes(role)) {
           console.error(`❌ Role inválida: ${nextArg}`);
           console.error(
@@ -86,6 +87,7 @@ function parseArgs(): AdminConfig {
         config.role = role;
         i++;
         break;
+      } // Add this closing brace
       case '--force-id':
         config.forceId = parseInt(nextArg, 10);
         i++;
@@ -97,6 +99,7 @@ function parseArgs(): AdminConfig {
       case '-h':
         printHelp();
         process.exit(0);
+        break;
       default:
         if (arg.startsWith('--')) {
           console.error(`❌ Parâmetro desconhecido: ${arg}`);

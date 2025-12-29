@@ -141,7 +141,16 @@ export class AuthService {
     const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ['force'],
-      select: ['id', 'email', 'name', 'role', 'forceId', 'mustChangePassword'],
+      select: [
+        'id',
+        'email',
+        'name',
+        'isActive',
+        'role',
+        'forceId',
+        'mustChangePassword',
+        'createdAt',
+      ],
     });
 
     if (!user) {
@@ -151,9 +160,12 @@ export class AuthService {
     return {
       id: user.id,
       email: user.email,
+      name: user.name,
+      isActive: user.isActive,
       role: user.role,
       forceId: user.forceId,
       mustChangePassword: user.mustChangePassword,
+      createdAt: user.createdAt,
     };
   }
 }
