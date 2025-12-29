@@ -8,12 +8,15 @@ export const envSchema = Joi.object({
   PORT: Joi.number().default(3000),
 
   // --- Database (Postgres) ---
-  DB_TYPE: Joi.string().valid('postgres').required(),
-  DB_HOST: Joi.string().required(),
+  // DATABASE_URL tem prioridade sobre campos individuais
+  DATABASE_URL: Joi.string().uri().optional(),
+
+  DB_TYPE: Joi.string().valid('postgres').default('postgres'),
+  DB_HOST: Joi.string().optional(),
   DB_PORT: Joi.number().default(5432),
-  DB_USERNAME: Joi.string().required(),
-  DB_PASSWORD: Joi.string().required(),
-  DB_DATABASE: Joi.string().required(),
+  DB_USERNAME: Joi.string().optional(),
+  DB_PASSWORD: Joi.string().optional(),
+  DB_DATABASE: Joi.string().optional(),
 
   // --- TypeORM Settings ---
   DB_SYNCHRONIZE: Joi.boolean().default(false),
@@ -29,5 +32,10 @@ export const envSchema = Joi.object({
   R2_ACCESS_KEY_ID: Joi.string().required(),
   R2_SECRET_ACCESS_KEY: Joi.string().required(),
   R2_BUCKET_NAME: Joi.string().required(),
-  R2_PUBLIC_URL: Joi.string().uri().required(), // .uri() garante que é um link válido (https://...)
-});
+  R2_PUBLIC_URL: Joi.string().uri().required(),
+})
+  .or('DATABASE_URL', 'DB_HOST', 'DB_USERNAME', 'DB_PASSWORD', 'DB_DATABASE')
+  .messages({
+    'object.missing':
+      'Deve fornecer DATABASE_URL ou campos individuais (DB_HOST, DB_USERNAME, DB_PASSWORD, DB_DATABASE)',
+  });

@@ -16,11 +16,15 @@ import { MediaUploadModule } from './media-upload/media-upload.module';
 import r2Config from './config/r2.config';
 import { envSchema } from './config/env.schema';
 
+// Determinar qual arquivo .env carregar baseado em NODE_ENV
+const envFile =
+  process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      envFilePath: envFile,
       validationSchema: envSchema,
       load: [r2Config],
     }),

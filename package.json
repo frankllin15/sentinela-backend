@@ -23,7 +23,9 @@
     "migration:create": "npm run typeorm -- migration:create",
     "migration:run": "npm run build && npm run typeorm -- migration:run -d dist/config/typeorm.config.js",
     "migration:revert": "npm run build && npm run typeorm -- migration:revert -d dist/config/typeorm.config.js",
-    "migration:show": "npm run build && npm run typeorm -- migration:show -d dist/config/typeorm.config.js"
+    "migration:show": "npm run build && npm run typeorm -- migration:show -d dist/config/typeorm.config.js",
+    "admin:create": "ts-node -r tsconfig-paths/register src/scripts/create-admin.ts",
+    "admin:create:prod": "cross-env NODE_ENV=production ts-node -r tsconfig-paths/register src/scripts/create-admin.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.953.0",
@@ -67,6 +69,7 @@
     "@types/passport-local": "^1.0.38",
     "@types/supertest": "^6.0.2",
     "@types/uuid": "^11.0.0",
+    "cross-env": "^10.1.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
