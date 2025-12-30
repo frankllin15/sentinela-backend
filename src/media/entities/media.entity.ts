@@ -46,4 +46,11 @@ export class Media {
 
   @Column({ name: 'person_id', type: 'integer' })
   personId: number;
+
+  @Column({
+    type: 'vector',
+    spatialFeatureType: 'vector(128)', // Garante a dimensão no Postgres
+    nullable: true,
+  })
+  embedding: number[] | null;
 }

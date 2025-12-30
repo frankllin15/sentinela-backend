@@ -1,31 +1,60 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateMediaDto } from './dto/create-media.dto';
 import { UpdateMediaDto } from './dto/update-media.dto';
 import { QueryMediaDto } from './dto/query-media.dto';
-import { Media } from './entities/media.entity';
+import { Media, MediaType } from './entities/media.entity';
 import { PeopleService } from '../people/people.service';
 import { User, UserRole } from '../users/entities/user.entity';
 import { Person } from '../people/entities/person.entity';
 import { BusinessException } from '../common/exceptions/business.exception';
 import { PaginatedResponse } from '../common/dto';
 import { PaginationService } from '../common/services/pagination.service';
+import { FaceRecognitionService } from './services/face-recognition.service';
 
 @Injectable()
 export class MediaService {
+  private readonly logger = new Logger(MediaService.name);
+
   constructor(
     @InjectRepository(Media)
     private readonly mediaRepository: Repository<Media>,
     private readonly peopleService: PeopleService,
     private readonly paginationService: PaginationService,
+    private readonly faceRecognitionService: FaceRecognitionService,
   ) {}
 
   async create(createMediaDto: CreateMediaDto, user: User): Promise<Media> {
     // Validar se Person existe e se user tem acesso (verificação de confidencialidade)
     await this.checkAccessToPerson(createMediaDto.personId, user);
 
+    // Criar a entidade media
     const media = this.mediaRepository.create(createMediaDto);
+
+    // Se for uma foto facial, extrair embedding
+    if (createMediaDto.type === MediaType.FACE) {
+      this.logger.log(
+        `Iniciando extração de embedding para media tipo FACE (URL: ${createMediaDto.url})`,
+      );
+
+      const embedding = await this.faceRecognitionService.extractEmbedding(
+        createMediaDto.url,
+      );
+
+      if (embedding) {
+        media.embedding = embedding;
+        this.logger.log(
+          `Embedding extraído e associado à media (dimensão: ${embedding.length})`,
+        );
+      } else {
+        this.logger.warn(
+          'Não foi possível extrair embedding - media será criada sem embedding',
+        );
+      }
+    }
+
+    // Salvar media (com ou sem embedding)
     return this.mediaRepository.save(media);
   }
 

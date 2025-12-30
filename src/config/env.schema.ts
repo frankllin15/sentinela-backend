@@ -33,6 +33,12 @@ export const envSchema = Joi.object({
   R2_SECRET_ACCESS_KEY: Joi.string().required(),
   R2_BUCKET_NAME: Joi.string().required(),
   R2_PUBLIC_URL: Joi.string().uri().required(),
+
+  // --- Face Recognition Service ---
+  FACE_RECOGNITION_API_URL: Joi.string()
+    .uri()
+    .default('http://localhost:8000')
+    .description('URL base do serviço de reconhecimento facial'),
 })
   .or('DATABASE_URL', 'DB_HOST', 'DB_USERNAME', 'DB_PASSWORD', 'DB_DATABASE')
   .messages({
