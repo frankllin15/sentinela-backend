@@ -1,22 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreatePersonDto } from './dto/create-person.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
 import { QueryPersonDto } from './dto/query-person.dto';
+import { SearchByFaceDto } from './dto/search-by-face.dto';
+import { FaceSearchResultDto } from './dto/face-search-result.dto';
 import { Person } from './entities/person.entity';
 import { User, UserRole } from '../users/entities/user.entity';
 import { BusinessException } from '../common/exceptions/business.exception';
 import { ReadPersonDto } from './dto/read-person.dto';
 import { PaginatedResponse } from '../common/dto';
 import { PaginationService } from '../common/services/pagination.service';
+import { FaceRecognitionService } from '../media/services/face-recognition.service';
 
 @Injectable()
 export class PeopleService {
+  private readonly logger = new Logger(PeopleService.name);
+
   constructor(
     @InjectRepository(Person)
     private personRepository: Repository<Person>,
     private paginationService: PaginationService,
+    private faceRecognitionService: FaceRecognitionService,
   ) {}
 
   async create(
@@ -201,6 +207,106 @@ export class PeopleService {
     return this.personRepository.findOne({ where: { cpf } });
   }
 
+  /**
+   * Busca pessoas por similaridade facial
+   * @param imageBuffer Buffer da imagem enviada
+   * @param searchDto DTO contendo parâmetros de busca
+   * @param user Usuário autenticado
+   * @returns Array de pessoas ordenadas por similaridade
+   */
+  async searchByFace(
+    imageBuffer: Buffer,
+    searchDto: SearchByFaceDto,
+    user: User,
+  ): Promise<FaceSearchResultDto[]> {
+    this.logger.log(
+      `Iniciando busca facial (imagem: ${imageBuffer.length} bytes)`,
+    );
+
+    // 1. Extrair embedding da imagem de busca
+    const queryEmbedding =
+      await this.faceRecognitionService.extractEmbeddingFromBuffer(imageBuffer);
+
+    if (!queryEmbedding) {
+      throw BusinessException.badRequest(
+        'Não foi possível extrair características faciais da imagem fornecida. Verifique se a imagem contém um rosto visível.',
+      );
+    }
+
+    this.logger.log(
+      `Embedding extraído (dimensão: ${queryEmbedding.length}), iniciando busca no banco...`,
+    );
+
+    // 2. Buscar pessoas com embeddings similares usando pgvector
+    // Operador <=> calcula distância de cosseno (quanto menor, mais similar)
+    // Convertemos para similaridade: 1 - distância
+    const limit = searchDto.limit || 10;
+    const threshold = searchDto.threshold || 0.5;
+
+    // Query de diagnóstico: verificar todos os candidatos sem threshold
+
+    const query = `
+      SELECT * FROM (
+        SELECT DISTINCT ON (p.id)
+          p.*,
+          m.url as "facePhotoUrl",
+          (1 - (m.embedding <=> $1::vector)) as similarity,
+          (m.embedding <=> $1::vector) as distance
+        FROM people p
+        INNER JOIN media m ON m.person_id = p.id
+        WHERE m.type = 'FACE'
+          AND m.embedding IS NOT NULL
+          AND (1 - (m.embedding <=> $1::vector)) >= $2
+          ${this.getConfidentialityFilterSql(user)}
+        ORDER BY p.id, m.embedding <=> $1::vector ASC
+      ) subquery
+      ORDER BY distance ASC
+      LIMIT $3
+    `;
+
+    this.logger.debug(`Executando query de busca facial: ${query}`);
+    this.logger.debug(`Parâmetros: threshold: ${threshold}, limit: ${limit}`);
+    this.logger.debug(
+      `Embedding de consulta: ${JSON.stringify(queryEmbedding)}`,
+    );
+
+    const results = await this.personRepository.query(query, [
+      JSON.stringify(queryEmbedding),
+      threshold,
+      limit,
+    ]);
+
+    this.logger.log(
+      `Busca concluída: ${results.length} resultado(s) encontrado(s) (threshold: ${threshold})`,
+    );
+
+    // 3. Mapear resultados para DTO
+    return results.map((row: any) => {
+      const person = new Person();
+      Object.assign(person, {
+        id: row.id,
+        fullName: row.full_name,
+        nickname: row.nickname,
+        cpf: row.cpf,
+        motherName: row.mother_name,
+        fatherName: row.father_name,
+        birthDate: row.birth_date,
+        isConfidential: row.is_confidential,
+        createdBy: row.created_by,
+        updatedBy: row.updated_by,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      });
+
+      return {
+        person,
+        similarity: parseFloat(row.similarity),
+        distance: parseFloat(row.distance),
+        facePhotoUrl: row.facePhotoUrl,
+      };
+    });
+  }
+
   // Métodos auxiliares privados
 
   private async validateCpfUniqueness(
@@ -283,5 +389,23 @@ export class PeopleService {
         'Você não tem permissão para acessar este registro confidencial',
       );
     }
+  }
+
+  /**
+   * Retorna filtro SQL para confidencialidade
+   * Usado em queries raw SQL
+   */
+  private getConfidentialityFilterSql(user: User): string {
+    const allowedRoles = [
+      UserRole.ADMIN_GERAL,
+      UserRole.GESTOR,
+      UserRole.PONTO_FOCAL,
+    ];
+
+    if (!allowedRoles.includes(user.role)) {
+      return 'AND p.is_confidential = false';
+    }
+
+    return '';
   }
 }

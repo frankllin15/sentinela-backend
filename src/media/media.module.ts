@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HttpModule } from '@nestjs/axios';
 import { MediaService } from './media.service';
@@ -11,7 +11,7 @@ import { FaceRecognitionService } from './services/face-recognition.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Media]),
-    PeopleModule,
+    forwardRef(() => PeopleModule),
     CommonModule,
     HttpModule.register({
       timeout: 30000,
@@ -20,6 +20,6 @@ import { FaceRecognitionService } from './services/face-recognition.service';
   ],
   controllers: [MediaController],
   providers: [MediaService, FaceRecognitionService],
-  exports: [MediaService],
+  exports: [MediaService, FaceRecognitionService],
 })
 export class MediaModule {}

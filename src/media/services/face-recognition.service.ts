@@ -21,34 +21,28 @@ export class FaceRecognitionService {
   }
 
   /**
-   * Extrai embedding de uma imagem facial
-   * @param imageUrl URL da imagem a ser baixada e processada
+   * Extrai embedding de uma imagem facial a partir de um Buffer
+   * @param imageBuffer Buffer contendo os dados da imagem
+   * @param contentType MIME type da imagem (padrão: image/jpeg)
    * @returns Array de números representando o embedding (dimensão 128), ou null se falhar
    */
-  async extractEmbedding(imageUrl: string): Promise<number[] | null> {
+  async extractEmbeddingFromBuffer(
+    imageBuffer: Buffer,
+    contentType: string = 'image/jpeg',
+  ): Promise<number[] | null> {
     try {
-      this.logger.log(`Extraindo embedding para imagem: ${imageUrl}`);
-
-      // 1. Baixar a imagem da URL
-      this.logger.debug('Baixando imagem...');
-      const imageResponse = await firstValueFrom(
-        this.httpService.get(imageUrl, {
-          responseType: 'arraybuffer',
-          timeout: 10000, // 10 segundos para download
-        }),
+      this.logger.log(
+        `Extraindo embedding de buffer (${imageBuffer.length} bytes)`,
       );
 
-      const imageBuffer = Buffer.from(imageResponse.data);
-      this.logger.debug(`Imagem baixada (${imageBuffer.length} bytes)`);
-
-      // 2. Criar FormData com o arquivo
+      // 1. Criar FormData com o arquivo
       const formData = new FormData();
       formData.append('file', imageBuffer, {
         filename: 'image.jpg',
-        contentType: imageResponse.headers['content-type'] || 'image/jpeg',
+        contentType,
       });
 
-      // 3. Enviar para API de reconhecimento facial
+      // 2. Enviar para API de reconhecimento facial
       this.logger.debug('Enviando para serviço de reconhecimento...');
       const response = await firstValueFrom(
         this.httpService.post<ExtractEmbeddingResponse>(
@@ -56,14 +50,14 @@ export class FaceRecognitionService {
           formData,
           {
             headers: formData.getHeaders(),
-            timeout: 30000, // 30 segundos timeout
+            timeout: 60000, // 60 segundos timeout
           },
         ),
       );
 
       const { embedding } = response.data;
 
-      // 4. Validar resposta
+      // 3. Validar resposta
       if (!embedding || !Array.isArray(embedding)) {
         this.logger.error('Resposta inválida: embedding não é um array');
         return null;
@@ -84,6 +78,42 @@ export class FaceRecognitionService {
       // Log do erro mas NÃO lançar exceção
       this.logger.error(
         `Erro ao extrair embedding: ${error.message}`,
+        error.stack,
+      );
+
+      // Retornar null
+      return null;
+    }
+  }
+
+  /**
+   * Extrai embedding de uma imagem facial a partir de URL
+   * @param imageUrl URL da imagem a ser baixada e processada
+   * @returns Array de números representando o embedding (dimensão 128), ou null se falhar
+   */
+  async extractEmbedding(imageUrl: string): Promise<number[] | null> {
+    try {
+      this.logger.log(`Extraindo embedding para imagem: ${imageUrl}`);
+
+      // 1. Baixar a imagem da URL
+      this.logger.debug('Baixando imagem...');
+      const imageResponse = await firstValueFrom(
+        this.httpService.get(imageUrl, {
+          responseType: 'arraybuffer',
+          timeout: 10000, // 10 segundos para download
+        }),
+      );
+
+      const imageBuffer = Buffer.from(imageResponse.data);
+      const contentType = imageResponse.headers['content-type'] || 'image/jpeg';
+      this.logger.debug(`Imagem baixada (${imageBuffer.length} bytes)`);
+
+      // 2. Delegar para o método que processa buffer
+      return this.extractEmbeddingFromBuffer(imageBuffer, contentType);
+    } catch (error) {
+      // Log do erro mas NÃO lançar exceção
+      this.logger.error(
+        `Erro ao baixar imagem da URL: ${error.message}`,
         error.stack,
       );
 

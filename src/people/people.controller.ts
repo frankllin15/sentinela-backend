@@ -8,11 +8,16 @@ import {
   Delete,
   UseGuards,
   Query,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { PeopleService } from './people.service';
 import { CreatePersonDto } from './dto/create-person.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
 import { QueryPersonDto } from './dto/query-person.dto';
+import { SearchByFaceDto } from './dto/search-by-face.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole, User } from '../users/entities/user.entity';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -34,6 +39,31 @@ export class PeopleController {
   @Audit('person.create', 'Person')
   create(@Body() createPersonDto: CreatePersonDto, @CurrentUser() user: User) {
     return this.peopleService.create(createPersonDto, user.id);
+  }
+
+  @Post('search-by-face')
+  @Audit('person.search_by_face', 'Person')
+  @UseInterceptors(FileInterceptor('image'))
+  searchByFace(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() searchDto: SearchByFaceDto,
+    @CurrentUser() user: User,
+  ) {
+    if (!file) {
+      throw new BadRequestException(
+        'A imagem é obrigatória. Envie o arquivo no campo "image"',
+      );
+    }
+
+    // Validar tipo de arquivo
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'Formato de imagem inválido. Formatos aceitos: JPEG, JPG, PNG',
+      );
+    }
+
+    return this.peopleService.searchByFace(file.buffer, searchDto, user);
   }
 
   @Get()

@@ -112,4 +112,12 @@ export class BusinessException extends HttpException {
       HttpStatus.UNAUTHORIZED,
     );
   }
+
+  static badRequest(message: string): BusinessException {
+    return new BusinessException(
+      message,
+      'BAD_REQUEST',
+      HttpStatus.BAD_REQUEST,
+    );
+  }
 }
